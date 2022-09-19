@@ -64,11 +64,11 @@ class PartitionLocationInfo {
     addPartitions(shuffleKey, locations, slavePartitionLocations)
   }
 
-  def getMasterLocation(shuffleKey: String, uniqueId: String): PartitionLocation = {
+  def getMasterLocation(shuffleKey: String, uniqueId: String): Option[PartitionLocation] = {
     getLocation(shuffleKey, uniqueId, PartitionLocation.Mode.Master)
   }
 
-  def getSlaveLocation(shuffleKey: String, uniqueId: String): PartitionLocation = {
+  def getSlaveLocation(shuffleKey: String, uniqueId: String): Option[PartitionLocation] = {
     getLocation(shuffleKey, uniqueId, PartitionLocation.Mode.Slave)
   }
 
@@ -231,7 +231,7 @@ class PartitionLocationInfo {
   private def getLocation(
       shuffleKey: String,
       uniqueId: String,
-      mode: PartitionLocation.Mode): PartitionLocation = {
+      mode: PartitionLocation.Mode): Option[PartitionLocation] = {
     val tokens = uniqueId.split("-", 2)
     val reduceId = tokens(0).toInt
     val epoch = tokens(1).toInt
@@ -245,13 +245,13 @@ class PartitionLocationInfo {
     this.synchronized {
       if (!partitionInfo.containsKey(shuffleKey)
         || !partitionInfo.get(shuffleKey).containsKey(reduceId)) {
-        return null
+        None
+      } else {
+        partitionInfo.get(shuffleKey)
+          .get(reduceId)
+          .asScala
+          .find(loc => loc.getEpoch == epoch)
       }
-      partitionInfo.get(shuffleKey)
-        .get(reduceId)
-        .asScala
-        .find(loc => loc.getEpoch == epoch)
-        .orNull
     }
   }
 
